@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow connection test</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1d2330; --muted:#5b6475; --ok:#1a7f37; --err:#c62828; --warn:#b26a00; --border:#dde1e7; --accent:#2f5bd3; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding:24px 16px; }
+  main { max-width:760px; margin:0 auto; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  p.sub { color:var(--muted); margin:0 0 20px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:16px; }
+  label { display:block; font-weight:600; margin-bottom:6px; }
+  input { width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; font:inherit; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  button { padding:10px 14px; border:0; border-radius:8px; background:var(--accent); color:#fff; font:inherit; font-weight:600; cursor:pointer; }
+  button.secondary { background:#4a5568; }
+  button:disabled { opacity:.5; cursor:wait; }
+  .result { border-left:4px solid var(--border); padding:8px 12px; margin-top:10px; background:#fafbfc; border-radius:0 8px 8px 0; }
+  .result.ok { border-color:var(--ok); }
+  .result.err { border-color:var(--err); }
+  .result h3 { margin:0 0 4px; font-size:15px; }
+  pre { white-space:pre-wrap; word-break:break-all; margin:6px 0 0; font-size:13px; color:var(--muted); }
+  .tag { font-weight:700; }
+  .tag.ok { color:var(--ok); } .tag.err { color:var(--err); }
+  ul { margin:6px 0 0; padding-left:20px; color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Power Automate connection test</h1>
+  <p class="sub">Internal test page. Use fake data only. Paste the flow URL; it is not stored anywhere.</p>
+
+  <div class="card">
+    <label for="url">Flow HTTP URL</label>
+    <input id="url" type="url" placeholder="https://...powerplatform.com/... or https://...logic.azure.com/...">
+    <div class="row">
+      <button id="bJson" type="button">Test A · application/json</button>
+      <button id="bText" type="button" class="secondary">Test B · text/plain</button>
+      <button id="bAll" type="button" class="secondary">Run both</button>
+    </div>
+    <ul>
+      <li><b>Test A</b> sends JSON normally. The browser first sends a CORS "preflight" (OPTIONS) request.</li>
+      <li><b>Test B</b> sends the same JSON as plain text. This avoids the preflight; the flow parses it.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <strong>Results</strong>
+    <div id="out"><p class="sub" style="margin:6px 0 0">No tests run yet.</p></div>
+  </div>
+</main>
+
+<script>
+const out = document.getElementById("out");
+const buttons = [...document.querySelectorAll("button")];
+const payload = () => ({ ref: "TEST-REF", name: "Test Guest", email: "test@example.com", day: "D1", sentAt: new Date().toISOString() });
+
+function render(title, ok, lines) {
+  if (out.querySelector("p.sub")) out.innerHTML = "";
+  const div = document.createElement("div");
+  div.className = "result " + (ok ? "ok" : "err");
+  div.innerHTML = `<h3>${title} — <span class="tag ${ok ? "ok" : "err"}">${ok ? "PASS" : "FAIL"}</span></h3><pre></pre>`;
+  div.querySelector("pre").textContent = lines.join("\n");
+  out.prepend(div);
+}
+
+async function run(mode) {
+  const url = document.getElementById("url").value.trim();
+  if (!url) { alert("Paste the flow URL first."); return; }
+  const title = mode === "json" ? "Test A · application/json" : "Test B · text/plain";
+  const t0 = performance.now();
+  try {
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": mode === "json" ? "application/json" : "text/plain" },
+      body: JSON.stringify(payload())
+    });
+    const ms = Math.round(performance.now() - t0);
+    const text = await r.text();
+    render(title, r.ok, [
+      `HTTP status: ${r.status}`,
+      `Time: ${ms} ms`,
+      `Response body: ${text || "(empty)"}`
+    ]);
+  } catch (e) {
+    const ms = Math.round(performance.now() - t0);
+    render(title, false, [
+      `Error: ${e.message}`,
+      `Time: ${ms} ms`,
+      "Most likely cause: CORS blocked the response (check the browser console, F12).",
+      "Check in the flow's run history whether the flow ran anyway."
+    ]);
+  }
+}
+
+async function guard(fn) { buttons.forEach(b => b.disabled = true); try { await fn(); } finally { buttons.forEach(b => b.disabled = false); } }
+document.getElementById("bJson").onclick = () => guard(() => run("json"));
+document.getElementById("bText").onclick = () => guard(() => run("text"));
+document.getElementById("bAll").onclick  = () => guard(async () => { await run("json"); await run("text"); });
+</script>
+</body>
+</html>
