@@ -78,8 +78,9 @@
           <div class="error-text">Ingresa tu apellido paterno.</div>
         </div>
         <div class="field" data-f="apellidoMaterno">
-          <label for="apellidoMaterno">Apellido materno <span class="opt">(opcional)</span></label>
-          <input id="apellidoMaterno" name="apellidoMaterno" type="text" maxlength="60">
+          <label for="apellidoMaterno">Apellido materno</label>
+          <input id="apellidoMaterno" name="apellidoMaterno" type="text" maxlength="60" required>
+          <div class="error-text">Ingresa tu apellido materno.</div>
         </div>
       </div>
 
@@ -134,7 +135,7 @@
 
 <script>
 /* ============ CONFIGURACIÓN ============ */
-const FLOW_URL = "https://default0a3cb694dbc94690b6b4cc6d900847.0e.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/3e6e2a58c2a346459e08fcd182235f41/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=lHOpYt4QEDhLQGuu-ZBNEWMCEnMs6Q-DdeAuvui9Z-8";
+const FLOW_URL = "PEGAR_AQUI_URL_DEL_FLUJO";
 const DIAS = { D1: "Sábado 28 de noviembre", D2: "Domingo 29 de noviembre" };
 const MAX_ENTRADAS = 10;
 const TIMEOUT_MS = 90000;
@@ -180,6 +181,7 @@ function validar(d) {
   let bad = false;
   bad = setInvalid("nombre", !d.nombre) || bad;
   bad = setInvalid("apellidoPaterno", !d.apellidoPaterno) || bad;
+  bad = setInvalid("apellidoMaterno", !d.apellidoMaterno) || bad;
   bad = setInvalid("rut", !rutValido(d.rut)) || bad;
   bad = setInvalid("mail", !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.mail)) || bad;
   bad = setInvalid("dia", !d.dia) || bad;
@@ -209,9 +211,19 @@ form.addEventListener("submit", async e => {
   const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
     const r = await fetch(FLOW_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d), signal: ctrl.signal });
-    let data = {}; try { data = await r.json(); } catch (_) {}
+    const raw = await r.text();
+    let data = {};
+    try {
+      data = JSON.parse(raw);
+      if (typeof data === "string") data = JSON.parse(data); // cuerpo enviado como texto con JSON adentro
+    } catch (_) { data = {}; }
+    if (!data || typeof data !== "object") data = {};
+    console.log("[registro] HTTP", r.status, "| cuerpo:", raw, "| interpretado:", data);
     if (r.status === 200 && data.status === "ok") return exito(d);
-    if (data.status === "duplicado") return showMsg("Este RUT ya tiene una inscripción registrada. No es necesario inscribirse de nuevo.", "warn");
+    if (data.status === "duplicado") {
+      const diaReg = DIAS[data.dia] ? ` para el ${DIAS[data.dia]}` : "";
+      return showMsg(`Este RUT ya está inscrito${diaReg}. Cada RUT puede inscribirse una sola vez, para un solo día.`, "warn");
+    }
     if (data.status === "sin_cupo") {
       const disp = Number(data.disponibles);
       const otro = d.dia === "D1" ? DIAS.D2 : DIAS.D1;
@@ -230,7 +242,7 @@ form.addEventListener("submit", async e => {
 
 function exito(d) {
   form.style.display = "none"; hideMsg();
-  const nombre = [d.nombre, d.apellidoPaterno, d.apellidoMaterno].filter(Boolean).join(" ");
+  const nombre = [d.nombre, d.apellidoPaterno, d.apellidoMaterno].join(" ");
   const filas = [["Nombre", nombre], ["RUT", formatRut(d.rut)], ["Correo", d.mail], ["Día", DIAS[d.dia]], ["Entradas", d.cantidad]];
   const s = $("summary"); s.innerHTML = "";
   filas.forEach(([k, v]) => { const row = document.createElement("div"); const a = document.createElement("span"); const b = document.createElement("span"); a.textContent = k; b.textContent = v; row.append(a, b); s.appendChild(row); });
