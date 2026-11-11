@@ -121,8 +121,8 @@
   .stepper button{width:36px;height:36px;border-radius:50%;border:0;background:var(--blue);color:#fff;font-size:22px;font-weight:800;line-height:1;cursor:pointer}
   .stepper button:disabled{background:#b9cde0;cursor:not-allowed}
   .count{min-width:110px;text-align:center;font-family:"Baloo 2",sans-serif;font-weight:800;font-size:20px;color:var(--blue)}
-  .floats{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:10px 0 4px}
-  @media (max-width:520px){.floats{grid-template-columns:repeat(5,1fr);gap:6px}}
+  .floats{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin:10px 0 4px}
+  @media (max-width:520px){.floats{grid-template-columns:repeat(4,1fr);gap:8px}}
   .float{border:0;background:none;padding:2px;cursor:pointer;border-radius:50%;transition:transform .15s}
   .float svg{width:100%;height:auto;display:block}
   .float .ring{fill:#e3edf6;transition:fill .2s}
@@ -235,7 +235,7 @@
   <header class="hero">
     <img id="logo" class="logo" src="logo.png" alt="Fantasilandia Splash Park">
     <h1 id="slogan">¡Lánzate al nuevo Splash Park!</h1>
-    <p>Inscríbete y reserva tus entradas. Una inscripción por RUT, hasta 10 entradas.</p>
+    <p>Inscríbete y reserva tus entradas. Una inscripción por RUT, hasta 8 entradas.</p>
   </header>
 
   <div class="card">
@@ -373,7 +373,7 @@
 
 <script>
 /* ============ CONFIGURACIÓN ============ */
-const FLOW_URL = "https://default0a3cb694dbc94690b6b4cc6d900847.0e.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/3e6e2a58c2a346459e08fcd182235f41/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=lHOpYt4QEDhLQGuu-ZBNEWMCEnMs6Q-DdeAuvui9Z-8";
+const FLOW_URL = "PEGAR_AQUI_URL_DEL_FLUJO";
 const DIAS = { D1: "Sábado 28 de noviembre", D2: "Domingo 29 de noviembre" };
 const MAX_ENTRADAS = 8;
 const TIMEOUT_MS = 90000;
