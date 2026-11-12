@@ -523,7 +523,7 @@ if (!reduceMotion) {
 }
 
 /* ---- Ola gigante ---- */
-const OLA_ESPERA_MS = 150000;   // 2,5 minutos con la página abierta
+const OLA_ESPERA_MS = 70000;   // 1 min aprox
 const OLA_INACTIVO_MS = 8000;   // y al menos 8 s sin escribir (no tapa a quien está escribiendo)
 let ultimaTecla = 0, olaMostrada = false, enviado = false;
 document.addEventListener("input", () => ultimaTecla = Date.now(), true);
