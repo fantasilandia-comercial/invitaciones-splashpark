@@ -344,6 +344,9 @@
             <label class="day"><input type="radio" name="dia" value="D2">
               <span class="face"><svg class="sun" viewBox="0 0 48 48" aria-hidden="true"><g stroke="#ff9e1b" stroke-width="4" stroke-linecap="round"><path d="M24 3v6M24 39v6M3 24h6M39 24h6M9 9l4 4M35 35l4 4M39 9l-4 4M13 35l-4 4"/></g><circle cx="24" cy="24" r="10" fill="#ffd700"/></svg>
               <span class="dname">Domingo</span><span class="dnum">29</span><span class="dname">noviembre</span></span></label>
+            <label class="day" hidden><input type="radio" name="dia" value="D0">
+              <span class="face"><svg class="sun" viewBox="0 0 48 48" aria-hidden="true"><g stroke="#ff9e1b" stroke-width="4" stroke-linecap="round"><path d="M24 3v6M24 39v6M3 24h6M39 24h6M9 9l4 4M35 35l4 4M39 9l-4 4M13 35l-4 4"/></g><circle cx="24" cy="24" r="10" fill="#ffd700"/></svg>
+              <span class="dname">Viernes</span><span class="dnum">27</span><span class="dname">noviembre</span></span></label>
           </div>
           <div class="error-text">Selecciona un día.</div>
         </div>
@@ -374,7 +377,9 @@
 <script>
 /* ============ CONFIGURACIÓN ============ */
 const FLOW_URL = "https://default0a3cb694dbc94690b6b4cc6d900847.0e.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/3e6e2a58c2a346459e08fcd182235f41/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=lHOpYt4QEDhLQGuu-ZBNEWMCEnMs6Q-DdeAuvui9Z-8";
-const DIAS = { D1: "Sábado 28 de noviembre", D2: "Domingo 29 de noviembre" };
+const DIAS = { D0: "Viernes 27 de noviembre", D1: "Sábado 28 de noviembre", D2: "Domingo 29 de noviembre" };
+/* Evento según el enlace: ?evento=27 muestra solo el viernes 27; sin parámetro, 28 y 29 */
+const EVENTO = new URLSearchParams(location.search).get("evento") === "27" ? "27" : "2829";
 const MAX_ENTRADAS = 8;
 const TIMEOUT_MS = 90000;
 /* ======================================= */
@@ -382,6 +387,19 @@ const TIMEOUT_MS = 90000;
 const $ = id => document.getElementById(id);
 const form = $("form"), btn = $("btn"), msg = $("msg");
 const ref = new URLSearchParams(location.search).get("ref") || "";
+
+/* ---- Días visibles según el evento ---- */
+document.querySelectorAll("label.day").forEach(l => {
+  const v = l.querySelector("input").value;
+  const mostrar = EVENTO === "27" ? v === "D0" : v !== "D0";
+  if (mostrar) l.hidden = false; else l.remove();
+});
+if (EVENTO === "27") {
+  form.querySelector('input[name="dia"][value="D0"]').checked = true;
+  form.querySelector(".days").style.gridTemplateColumns = "minmax(0,260px)";
+  form.querySelector(".days").style.justifyContent = "center";
+  $("dia-label").textContent = "Tu día de visita";
+}
 const PALETA = ["#ff9e1b","#e2241c","#ffd700","#00cfb4","#59cbe8","#d0df00","#0072ce","#00a9e0"];
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -624,6 +642,9 @@ form.addEventListener("submit", async e => {
     }
     if (data.status === "sin_cupo") {
       const disp = Number(data.disponibles);
+      if (d.dia === "D0") return showMsg(disp > 0
+        ? `Para el ${DIAS.D0} solo quedan ${disp} entradas. Reduce la cantidad para continuar.`
+        : `Lo sentimos, ya no quedan entradas para el ${DIAS.D0}.`, "warn");
       const otro = d.dia === "D1" ? DIAS.D2 : DIAS.D1;
       return showMsg(disp > 0
         ? `Para el ${DIAS[d.dia]} solo quedan ${disp} entradas. Reduce la cantidad o elige el ${otro}.`
