@@ -289,6 +289,14 @@
       <p>Si tienes dudas, escríbenos a <a href="mailto:entradas@fantasilandia.cl">entradas@fantasilandia.cl</a>.</p>
     </div>
 
+    <div id="cerrado" class="cancelado" hidden>
+      <svg viewBox="0 0 64 40" aria-hidden="true"><path d="M2 30q8-10 16 0t16 0 16 0 14-2V40H2Z" fill="#0072ce"/><path d="M2 22q8-10 16 0t16 0 16 0 14-2" stroke="#59cbe8" stroke-width="4" fill="none" stroke-linecap="round"/></svg>
+      <h2>El período de inscripciones ha terminado</h2>
+      <p>Ya no estamos recibiendo nuevas inscripciones para el sábado 28 y el domingo 29 de noviembre. ¡Gracias por tu interés!</p>
+      <p>Si ya te inscribiste, no necesitas hacer nada: recibirás tus entradas en el correo que registraste.</p>
+      <p>Si tienes dudas, escríbenos a <a href="mailto:entradas@fantasilandia.cl">entradas@fantasilandia.cl</a>.</p>
+    </div>
+
     <div id="msg" class="msg" role="alert"></div>
 
     <form id="form" novalidate>
@@ -396,7 +404,9 @@ const DIAS = { D0: "Viernes 27 de noviembre", D1: "Sábado 28 de noviembre", D2:
 /* Evento según el enlace: ?evento=27 muestra solo el viernes 27; sin parámetro, 28 y 29 */
 const EVENTO = new URLSearchParams(location.search).get("evento") === "27" ? "27" : "2829";
 const EVENTO_27_CANCELADO = true;   // true = los enlaces del 27 muestran "evento cancelado" en vez del formulario
-const CANCELADO = EVENTO === "27" && EVENTO_27_CANCELADO;
+const INSCRIPCIONES_CERRADAS = true; // true = los enlaces del 28 y 29 muestran "inscripciones terminadas" en vez del formulario
+const CERRADO = EVENTO === "2829" && INSCRIPCIONES_CERRADAS;
+const CANCELADO = (EVENTO === "27" && EVENTO_27_CANCELADO) || CERRADO;   // cualquiera de los dos bloquea el formulario
 const MAX_ENTRADAS = 8;
 const TIMEOUT_MS = 90000;
 /* ======================================= */
@@ -420,8 +430,13 @@ if (EVENTO === "27") {
 if (CANCELADO) {
   form.style.display = "none"; [...form.elements].forEach(e => e.disabled = true);
   $("slideBox").style.display = "none";
-  $("cancelado").hidden = false;
-  document.querySelector(".hero p").textContent = "Inscripciones cerradas para el viernes 27 de noviembre.";
+  if (CERRADO) {
+    $("cerrado").hidden = false;
+    document.querySelector(".hero p").textContent = "Gracias por ser parte del nuevo Splash Park.";
+  } else {
+    $("cancelado").hidden = false;
+    document.querySelector(".hero p").textContent = "Inscripciones cerradas para el viernes 27 de noviembre.";
+  }
 }
 const PALETA = ["#ff9e1b","#e2241c","#ffd700","#00cfb4","#59cbe8","#d0df00","#0072ce","#00a9e0"];
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -632,6 +647,7 @@ function validar(d) {
 /* ---- Envío ---- */
 form.addEventListener("submit", async e => {
   e.preventDefault(); hideMsg();
+  if (CANCELADO) return;
   const fd = new FormData(form);
   const d = {
     accion: "registrar",
